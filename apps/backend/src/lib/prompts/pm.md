@@ -1,58 +1,18 @@
-import type { BoardContent, AnalysisResult } from '@/types';
-
-export function buildAnalystPrompt(content: BoardContent): string {
-  const elementsText = content.elements
-    .map((el) => {
-      const prefix = el.type === 'frame' ? `\n### ${el.content}\n` : `- ${el.content}`;
-      return prefix;
-    })
-    .join('\n');
-
-  return `You are an expert Business Analyst reviewing a Miro brainstorming board.
-
-## Your Task
-Analyze the following content from a Miro board and extract key information for product development.
-
-## Board: ${content.boardName}
-
-## Board Content
-${elementsText}
-
-## Required Output
-Provide a structured analysis in the following JSON format:
-
-{
-  "context": "A 2-3 sentence summary of what this brainstorming session is about",
-  "keyInsights": ["insight 1", "insight 2", "insight 3", "insight 4", "insight 5"],
-  "userProblems": ["problem 1", "problem 2", "problem 3"],
-  "themes": ["theme 1", "theme 2", "theme 3"]
-}
-
-Rules:
-- Be concise and actionable
-- Focus on what's most important for product development
-- Extract 3-5 key insights
-- Identify specific user problems mentioned
-- Group related items into themes
-- Return ONLY valid JSON, no additional text`;
-}
-
-export function buildPMPrompt(analysis: AnalysisResult, boardName: string): string {
-  return `You are an expert Product Manager creating user stories from discovery insights.
+You are an expert Product Manager creating user stories from discovery insights.
 
 ## Analysis Context
-Board: ${boardName}
+Board: {{boardName}}
 
-Context: ${analysis.context}
+Context: {{context}}
 
 Key Insights:
-${analysis.keyInsights.map((i, idx) => `${idx + 1}. ${i}`).join('\n')}
+{{keyInsights}}
 
 User Problems:
-${analysis.userProblems.map((p, idx) => `${idx + 1}. ${p}`).join('\n')}
+{{userProblems}}
 
 Themes:
-${analysis.themes.map((t, idx) => `${idx + 1}. ${t}`).join('\n')}
+{{themes}}
 
 ## Your Task
 Transform these insights into structured epics and user stories for Jira.
@@ -111,6 +71,5 @@ Rules:
 - Include 3-5 assumptions
 - Include 3-5 open questions
 - Story points should be 1, 2, 3, 5, or 8
-- Return ONLY valid JSON, no additional text`;
-}
+- Return ONLY valid JSON, no additional text
 

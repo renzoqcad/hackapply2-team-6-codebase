@@ -111,3 +111,14 @@ export interface ProcessingStatus {
   progress: number;
 }
 
+// New Project Output Types (matching project-output.ts schema)
+export type { ProjectOutput, ProjectSummary, Epic, Story, Risk, Assumption, OpenQuestion, OpenQuestionsCategory, OpenQuestions } from '@/schemas/project-output';
+
+// Processing Input Types
+export type ProcessingInputType = 'file' | 'miro-url';
+
+export interface ProcessingInput {
+  type: ProcessingInputType;
+  data: File | string; // File for file upload, string for Miro URL
+}
+
