@@ -358,7 +358,7 @@ export default function AgileFactory() {
         formData.append("miroUrl", miroUrl.trim())
       }
 
-      const response = await fetch("http://localhost:3000/api/process", {
+      const response = await fetch("/api/process", {
         method: "POST",
         body: formData,
       })
