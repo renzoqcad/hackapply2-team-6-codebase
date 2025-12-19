@@ -1,4 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { writeFileSync } from "fs";
+import { join } from "path";
 import type { ProcessingStatus, ProcessingInput } from "@/types";
 import type { ProjectOutput } from "@/schemas/project-output";
 import { projectOutputSchema } from "@/schemas/project-output";
@@ -115,12 +117,29 @@ export async function processInput(
     console.log("[Orchestrator] Calling Gemini API...");
 
     const genAI = getGenAI();
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      generationConfig: {
+        maxOutputTokens: 8192, // Maximum for gemini-2.0-flash
+        temperature: 0.9,
+      },
+    });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
 
     console.log("[Orchestrator] Raw response received, length:", text.length);
+
+    // Save raw response to file for debugging
+    try {
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const filename = `ai-response-${timestamp}.txt`;
+      const filepath = join(process.cwd(), "debug", filename);
+      writeFileSync(filepath, text, "utf-8");
+      console.log("[Orchestrator] Raw response saved to:", filepath);
+    } catch (error) {
+      console.warn("[Orchestrator] Failed to save response to file:", error);
+    }
 
     // Step 4: Clean and parse JSON response
     updateStatus("generating", "Parsing AI response...", 80);
@@ -138,17 +157,70 @@ export async function processInput(
     }
     cleanText = cleanText.trim();
 
-    // Parse JSON
+    // Parse JSON with repair attempts
     let parsed: unknown;
     try {
       parsed = JSON.parse(cleanText);
     } catch (parseError) {
       console.error("[Orchestrator] JSON parse error:", parseError);
-      throw new Error(
-        `Failed to parse AI response as JSON: ${
-          parseError instanceof Error ? parseError.message : "Unknown error"
-        }`
-      );
+      console.log("[Orchestrator] Attempting to repair JSON...");
+
+      try {
+        // Attempt 1: Extract JSON between first { and last }
+        const firstBrace = cleanText.indexOf("{");
+        const lastBrace = cleanText.lastIndexOf("}");
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          const extracted = cleanText.slice(firstBrace, lastBrace + 1);
+          parsed = JSON.parse(extracted);
+          console.log(
+            "[Orchestrator] Successfully repaired JSON by extracting"
+          );
+        } else {
+          throw parseError;
+        }
+      } catch (repairError) {
+        // Attempt 2: Try to fix unterminated strings by finding incomplete quotes
+        console.log(
+          "[Orchestrator] First repair attempt failed, trying string fix..."
+        );
+        try {
+          let fixed = cleanText;
+          // Find position mentioned in error
+          const errorMatch =
+            parseError instanceof Error
+              ? parseError.message.match(/position (\d+)/)
+              : null;
+
+          if (errorMatch) {
+            const position = parseInt(errorMatch[1]);
+            console.log(`[Orchestrator] Error at position ${position}`);
+
+            // Try to complete the JSON by closing unterminated strings/objects
+            // Find the last complete object before the error
+            const beforeError = fixed.slice(0, position);
+            const lastCompleteObj = beforeError.lastIndexOf("},");
+
+            if (lastCompleteObj !== -1) {
+              // Truncate to last complete object and close the array/object
+              fixed = beforeError.slice(0, lastCompleteObj + 1) + "]}";
+              console.log("[Orchestrator] Attempting to parse truncated JSON");
+              parsed = JSON.parse(fixed);
+              console.log("[Orchestrator] Successfully parsed truncated JSON");
+            } else {
+              throw repairError;
+            }
+          } else {
+            throw repairError;
+          }
+        } catch (finalError) {
+          console.error("[Orchestrator] All repair attempts failed");
+          throw new Error(
+            `Failed to parse AI response as JSON: ${
+              parseError instanceof Error ? parseError.message : "Unknown error"
+            }. Please check the debug file for the raw response.`
+          );
+        }
+      }
     }
 
     // Step 5: Validate against schema
