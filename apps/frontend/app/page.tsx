@@ -1,10 +1,16 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Copy,
   AlertTriangle,
@@ -20,30 +26,56 @@ import {
   Plus,
   Settings2,
   Upload,
-} from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-import { Toaster } from "@/components/ui/toaster"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
 
-type TabType = "summary" | "epics" | "risks" | "assumptions" | "questions" | "insights"
+type TabType =
+  | "summary"
+  | "epics"
+  | "risks"
+  | "assumptions"
+  | "questions"
+  | "insights";
 
 type Story = {
-  title: string
-  description: string
-  criteria: string[]
-  estimationHours: number
-}
+  title: string;
+  description: string;
+  criteria: string[];
+  estimationHours: number;
+};
 
 type Epic = {
-  title: string
-  description: string
-  stories: Story[]
-}
+  title: string;
+  description: string;
+  stories: Story[];
+};
 
 type AgentPersona =
   | "General Orchestrator"
@@ -56,38 +88,43 @@ type AgentPersona =
   | "Business Consultant"
   | "QA Lead"
   | "Account Lead"
-  | "Client Owner"
+  | "Client Owner";
 
 type ChatMessage = {
-  id: string
-  agent: AgentPersona
-  content: string
-  timestamp: Date
-  isUser?: boolean
-}
+  id: string;
+  agent: AgentPersona;
+  content: string;
+  timestamp: Date;
+  isUser?: boolean;
+};
 
-type InsightType = "Summary" | "Epics & Stories" | "Risks & Assumptions" | "Open Questions" | "Other"
+type InsightType =
+  | "Summary"
+  | "Epics & Stories"
+  | "Risks & Assumptions"
+  | "Open Questions"
+  | "Other";
 
 type Insight = {
-  id: string
-  type: InsightType
-  agent: AgentPersona
-  label: string
-  content: string
-  timestamp: Date
-}
+  id: string;
+  type: InsightType;
+  agent: AgentPersona;
+  label: string;
+  content: string;
+  timestamp: Date;
+};
 
 type FreeformNote = {
-  id: string
-  title: string
-  content: string
-  timestamp: Date
-}
+  id: string;
+  title: string;
+  content: string;
+  timestamp: Date;
+};
 
 type ContextItem = {
-  id: string
-  story: Story
-}
+  id: string;
+  story: Story;
+};
 
 const agentEmojis: Record<AgentPersona, string> = {
   "General Orchestrator": "🧠",
@@ -101,77 +138,84 @@ const agentEmojis: Record<AgentPersona, string> = {
   "QA Lead": "✅",
   "Account Lead": "🤝",
   "Client Owner": "🧑‍💼",
-}
+};
 
 // Project Output Types (matching backend schema)
 type ProjectOutput = {
   projectSummary: {
-    title: string
-    description: string
-    objectives: string[]
-  }
+    title: string;
+    description: string;
+    objectives: string[];
+  };
   epics: Array<{
-    id: string
-    title: string
-    description: string
+    id: string;
+    title: string;
+    description: string;
     stories: Array<{
-      id: string
-      title: string
-      shortDescription: string
-      fullDescription: string
-      acceptanceCriteria: string[]
-      tags: string[]
-    }>
-  }>
+      id: string;
+      title: string;
+      shortDescription: string;
+      fullDescription: string;
+      acceptanceCriteria: string[];
+      tags: string[];
+    }>;
+  }>;
   risks: Array<{
-    id: string
-    description: string
-    impact: "low" | "medium" | "high"
-    probability: "low" | "medium" | "high"
-    mitigation: string
-  }>
+    id: string;
+    description: string;
+    impact: "low" | "medium" | "high";
+    probability: "low" | "medium" | "high";
+    mitigation: string;
+  }>;
   assumptions: Array<{
-    id: string
-    description: string
-    reason: string
-  }>
+    id: string;
+    description: string;
+    reason: string;
+  }>;
   openQuestions: {
-    unclassified: unknown[]
+    unclassified: unknown[];
     categories: Array<{
-      category: string
+      category: string;
       questions: Array<{
-        id: string
-        question: string
-        type: string
-        origin: string
-      }>
-    }>
-  }
-}
+        id: string;
+        question: string;
+        type: string;
+        origin: string;
+      }>;
+    }>;
+  };
+};
 
 export default function AgileFactory() {
-  const [activeTab, setActiveTab] = useState<TabType>("summary")
-  const [sourceTab, setSourceTab] = useState<"miro" | "file">("miro")
-  const [miroUrl, setMiroUrl] = useState("")
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
-  const { toast } = useToast()
-  const [selectedEpic, setSelectedEpic] = useState<Epic | null>(null)
-  const [selectedStory, setSelectedStory] = useState<Story | null>(null)
-  const [projectOutput, setProjectOutput] = useState<ProjectOutput | null>(null)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<TabType>("summary");
+  const [sourceTab, setSourceTab] = useState<"miro" | "file">("miro");
+  const [miroUrl, setMiroUrl] = useState("");
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const { toast } = useToast();
+  const [selectedEpic, setSelectedEpic] = useState<Epic | null>(null);
+  const [selectedStory, setSelectedStory] = useState<Story | null>(null);
+  const [projectOutput, setProjectOutput] = useState<ProjectOutput | null>(
+    null
+  );
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [enableChatAndInsights, setEnableChatAndInsights] = useState(true)
-  const [showFeatureFlags, setShowFeatureFlags] = useState(false)
+  const [enableChatAndInsights, setEnableChatAndInsights] = useState(true);
+  const [showFeatureFlags, setShowFeatureFlags] = useState(false);
 
-  const [isChatOpen, setIsChatOpen] = useState(false)
-  const [activeAgent, setActiveAgent] = useState<AgentPersona>("General Orchestrator")
-  const [chatHistories, setChatHistories] = useState<Record<AgentPersona, ChatMessage[]>>({
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [activeAgent, setActiveAgent] = useState<AgentPersona>(
+    "General Orchestrator"
+  );
+  const [chatHistories, setChatHistories] = useState<
+    Record<AgentPersona, ChatMessage[]>
+  >({
     "General Orchestrator": [
       {
         id: "1",
         agent: "General Orchestrator",
-        content: "Hello! I'm the General Orchestrator. I can help coordinate your discovery process across all areas.",
+        content:
+          "Hello! I'm the General Orchestrator. I can help coordinate your discovery process across all areas.",
         timestamp: new Date(),
       },
     ],
@@ -185,22 +229,24 @@ export default function AgileFactory() {
     "QA Lead": [],
     "Account Lead": [],
     "Client Owner": [],
-  })
-  const [messageInput, setMessageInput] = useState("")
-  const [contextItems, setContextItems] = useState<ContextItem[]>([])
+  });
+  const [messageInput, setMessageInput] = useState("");
+  const [contextItems, setContextItems] = useState<ContextItem[]>([]);
 
-  const [savingMessageId, setSavingMessageId] = useState<string | null>(null)
+  const [savingMessageId, setSavingMessageId] = useState<string | null>(null);
   const [saveInsightForm, setSaveInsightForm] = useState<{
-    type: InsightType
-    label: string
-  }>({ type: "Summary", label: "" })
+    type: InsightType;
+    label: string;
+  }>({ type: "Summary", label: "" });
 
-  const [insights, setInsights] = useState<Insight[]>([])
-  const [freeformNotes, setFreeformNotes] = useState<FreeformNote[]>([])
-  const [expandedInsights, setExpandedInsights] = useState<Set<string>>(new Set())
-  const [isAddingNote, setIsAddingNote] = useState(false)
-  const [newNoteTitle, setNewNoteTitle] = useState("")
-  const [newNoteContent, setNewNoteContent] = useState("")
+  const [insights, setInsights] = useState<Insight[]>([]);
+  const [freeformNotes, setFreeformNotes] = useState<FreeformNote[]>([]);
+  const [expandedInsights, setExpandedInsights] = useState<Set<string>>(
+    new Set()
+  );
+  const [isAddingNote, setIsAddingNote] = useState(false);
+  const [newNoteTitle, setNewNoteTitle] = useState("");
+  const [newNoteContent, setNewNoteContent] = useState("");
 
   const agentPersonas: AgentPersona[] = [
     "General Orchestrator",
@@ -214,46 +260,48 @@ export default function AgileFactory() {
     "QA Lead",
     "Account Lead",
     "Client Owner",
-  ]
+  ];
 
   const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text)
+    navigator.clipboard.writeText(text);
     toast({
       title: "Copied!",
       description: `${label} copied to clipboard`,
-    })
-  }
+    });
+  };
 
   const addToContext = (story: Story) => {
     // Check if story is already in context
-    const exists = contextItems.some((item) => item.story.title === story.title)
+    const exists = contextItems.some(
+      (item) => item.story.title === story.title
+    );
     if (exists) {
       toast({
         title: "Already in Context",
         description: `"${story.title}" is already in chat context`,
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     const newItem: ContextItem = {
       id: Date.now().toString(),
       story,
-    }
-    setContextItems((prev) => [...prev, newItem])
+    };
+    setContextItems((prev) => [...prev, newItem]);
 
     toast({
       title: "Added to Context",
       description: `"${story.title}" added to chat context`,
-    })
-  }
+    });
+  };
 
   const removeFromContext = (id: string) => {
-    setContextItems((prev) => prev.filter((item) => item.id !== id))
-  }
+    setContextItems((prev) => prev.filter((item) => item.id !== id));
+  };
 
   const sendMessage = () => {
-    if (!messageInput.trim()) return
+    if (!messageInput.trim()) return;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -261,131 +309,137 @@ export default function AgileFactory() {
       content: messageInput,
       timestamp: new Date(),
       isUser: true,
-    }
+    };
 
     setChatHistories((prev) => ({
       ...prev,
       [activeAgent]: [...prev[activeAgent], userMessage],
-    }))
+    }));
 
-    setMessageInput("")
+    setMessageInput("");
 
     // Simulate agent response
     setTimeout(() => {
-      const contextInfo = contextItems.length > 0 ? `\n\nContext available: ${contextItems.length} item(s)` : ""
+      const contextInfo =
+        contextItems.length > 0
+          ? `\n\nContext available: ${contextItems.length} item(s)`
+          : "";
       const response: ChatMessage = {
         id: (Date.now() + 1).toString(),
         agent: activeAgent,
         content: `As ${activeAgent}, I understand your question. Let me provide some insights based on the current discovery...${contextInfo}`,
         timestamp: new Date(),
-      }
+      };
 
       setChatHistories((prev) => ({
         ...prev,
         [activeAgent]: [...prev[activeAgent], response],
-      }))
-    }, 1000)
-  }
+      }));
+    }, 1000);
+  };
 
   const saveToInsights = (message: ChatMessage) => {
     const newInsight: Insight = {
       id: Date.now().toString(),
       type: saveInsightForm.type,
       agent: message.agent,
-      label: saveInsightForm.label || `${saveInsightForm.type} from ${message.agent}`,
+      label:
+        saveInsightForm.label ||
+        `${saveInsightForm.type} from ${message.agent}`,
       content: message.content,
       timestamp: new Date(),
-    }
+    };
 
-    setInsights((prev) => [newInsight, ...prev])
-    setSavingMessageId(null)
-    setSaveInsightForm({ type: "Summary", label: "" })
+    setInsights((prev) => [newInsight, ...prev]);
+    setSavingMessageId(null);
+    setSaveInsightForm({ type: "Summary", label: "" });
 
     toast({
       title: "Saved!",
       description: "Insight saved successfully",
-    })
-  }
+    });
+  };
 
   const toggleInsightExpansion = (id: string) => {
-    const newExpanded = new Set(expandedInsights)
+    const newExpanded = new Set(expandedInsights);
     if (newExpanded.has(id)) {
-      newExpanded.delete(id)
+      newExpanded.delete(id);
     } else {
-      newExpanded.add(id)
+      newExpanded.add(id);
     }
-    setExpandedInsights(newExpanded)
-  }
+    setExpandedInsights(newExpanded);
+  };
 
   const addFreeformNote = () => {
-    if (!newNoteTitle.trim()) return
+    if (!newNoteTitle.trim()) return;
 
     const note: FreeformNote = {
       id: Date.now().toString(),
       title: newNoteTitle,
       content: newNoteContent,
       timestamp: new Date(),
-    }
+    };
 
-    setFreeformNotes((prev) => [note, ...prev])
-    setNewNoteTitle("")
-    setNewNoteContent("")
-    setIsAddingNote(false)
+    setFreeformNotes((prev) => [note, ...prev]);
+    setNewNoteTitle("");
+    setNewNoteContent("");
+    setIsAddingNote(false);
 
     toast({
       title: "Note Added!",
       description: "Your note has been saved",
-    })
-  }
+    });
+  };
 
   const handleProcess = async () => {
-    setIsProcessing(true)
-    setError(null)
-    setProjectOutput(null)
+    setIsProcessing(true);
+    setError(null);
+    setProjectOutput(null);
 
     try {
-      const formData = new FormData()
-      
+      const formData = new FormData();
+
       if (sourceTab === "file") {
         if (!uploadedFile) {
-          throw new Error("Please select a file to upload")
+          throw new Error("Please select a file to upload");
         }
-        formData.append("file", uploadedFile)
+        formData.append("file", uploadedFile);
       } else {
         if (!miroUrl.trim()) {
-          throw new Error("Please enter a Miro URL")
+          throw new Error("Please enter a Miro URL");
         }
-        formData.append("miroUrl", miroUrl.trim())
+        formData.append("miroUrl", miroUrl.trim());
       }
 
       const response = await fetch("/api/process", {
         method: "POST",
         body: formData,
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error?.message || "Processing failed")
+        throw new Error(data.error?.message || "Processing failed");
       }
 
-      setProjectOutput(data.data)
+      setProjectOutput(data.data);
       toast({
         title: "Success!",
         description: "Project breakdown generated successfully",
-      })
+      });
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An error occurred"
-      setError(errorMessage)
+      const errorMessage =
+        err instanceof Error ? err.message : "An error occurred";
+      setError(errorMessage);
       toast({
         title: "Error",
         description: errorMessage,
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false);
     }
-  }
+  };
 
   const availableTabs = [
     { id: "summary", label: "Summary" },
@@ -394,15 +448,25 @@ export default function AgileFactory() {
     { id: "assumptions", label: "Assumptions" },
     { id: "questions", label: "Open Questions" },
     ...(enableChatAndInsights ? [{ id: "insights", label: "Insights" }] : []),
-  ]
+  ];
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Loading Overlay */}
+      <LoadingOverlay
+        isLoading={isProcessing}
+        message="Generating project breakdown..."
+      />
+
       {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="mx-auto max-w-5xl px-6 py-4">
-          <h1 className="text-xl font-semibold text-foreground">Agile Factory</h1>
-          <p className="text-sm text-muted-foreground">Generate MVP plans from your Miro boards</p>
+          <h1 className="text-xl font-semibold text-foreground">
+            Agile Factory
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Generate MVP plans from your Miro boards
+          </p>
         </div>
       </header>
 
@@ -411,10 +475,15 @@ export default function AgileFactory() {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="text-base">Miro Source</CardTitle>
-            <CardDescription>Enter your Miro board or upload a discovery document</CardDescription>
+            <CardDescription>
+              Enter your Miro board or upload a discovery document
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs value={sourceTab} onValueChange={(v) => setSourceTab(v as "miro" | "file")}>
+            <Tabs
+              value={sourceTab}
+              onValueChange={(v) => setSourceTab(v as "miro" | "file")}
+            >
               <TabsList className="mb-4">
                 <TabsTrigger value="miro">Miro</TabsTrigger>
                 <TabsTrigger value="file">File</TabsTrigger>
@@ -427,7 +496,11 @@ export default function AgileFactory() {
                     onChange={(e) => setMiroUrl(e.target.value)}
                     className="flex-1"
                   />
-                  <Button size="lg" onClick={handleProcess} disabled={isProcessing || !miroUrl.trim()}>
+                  <Button
+                    size="lg"
+                    onClick={handleProcess}
+                    disabled={isProcessing || !miroUrl.trim()}
+                  >
                     {isProcessing ? "Processing..." : "Run Orchestrator"}
                   </Button>
                 </div>
@@ -439,7 +512,10 @@ export default function AgileFactory() {
                 <div className="flex gap-3">
                   <div className="flex flex-1 items-center gap-3 rounded-md border border-input bg-background px-3 py-2">
                     <Upload className="h-4 w-4 text-muted-foreground" />
-                    <label htmlFor="file-upload" className="flex-1 cursor-pointer text-sm text-muted-foreground">
+                    <label
+                      htmlFor="file-upload"
+                      className="flex-1 cursor-pointer text-sm text-muted-foreground"
+                    >
                       {uploadedFile
                         ? uploadedFile.name
                         : "Upload an image, PDF, JSON, or text file"}
@@ -448,11 +524,17 @@ export default function AgileFactory() {
                       id="file-upload"
                       type="file"
                       className="hidden"
-                      onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
+                      onChange={(e) =>
+                        setUploadedFile(e.target.files?.[0] || null)
+                      }
                       accept=".pdf,.json,.txt,.jpg,.jpeg,.png"
                     />
                   </div>
-                  <Button size="lg" onClick={handleProcess} disabled={isProcessing || !uploadedFile}>
+                  <Button
+                    size="lg"
+                    onClick={handleProcess}
+                    disabled={isProcessing || !uploadedFile}
+                  >
                     {isProcessing ? "Processing..." : "Run Orchestrator"}
                   </Button>
                 </div>
@@ -486,26 +568,56 @@ export default function AgileFactory() {
           {!projectOutput && !isProcessing && (
             <Card>
               <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">Upload a file or enter a Miro URL and click "Run Orchestrator" to generate project breakdown</p>
+                <p className="text-muted-foreground">
+                  Upload a file or enter a Miro URL and click "Run Orchestrator"
+                  to generate project breakdown
+                </p>
               </CardContent>
             </Card>
           )}
           {isProcessing && (
             <Card>
               <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">Processing your input... This may take a moment.</p>
+                <p className="text-muted-foreground">
+                  Processing your input... This may take a moment.
+                </p>
               </CardContent>
             </Card>
           )}
           {projectOutput && (
             <>
-              {activeTab === "summary" && <SummaryTab projectOutput={projectOutput} onCopy={copyToClipboard} />}
-              {activeTab === "epics" && (
-                <EpicsTab projectOutput={projectOutput} onOpenEpic={setSelectedEpic} onOpenStory={setSelectedStory} onAddToContext={addToContext} />
+              {activeTab === "summary" && (
+                <SummaryTab
+                  projectOutput={projectOutput}
+                  onCopy={copyToClipboard}
+                />
               )}
-              {activeTab === "risks" && <RisksTab projectOutput={projectOutput} onCopy={copyToClipboard} />}
-              {activeTab === "assumptions" && <AssumptionsTab projectOutput={projectOutput} onCopy={copyToClipboard} />}
-              {activeTab === "questions" && <QuestionsTab projectOutput={projectOutput} onCopy={copyToClipboard} />}
+              {activeTab === "epics" && (
+                <EpicsTab
+                  projectOutput={projectOutput}
+                  onOpenEpic={setSelectedEpic}
+                  onOpenStory={setSelectedStory}
+                  onAddToContext={addToContext}
+                />
+              )}
+              {activeTab === "risks" && (
+                <RisksTab
+                  projectOutput={projectOutput}
+                  onCopy={copyToClipboard}
+                />
+              )}
+              {activeTab === "assumptions" && (
+                <AssumptionsTab
+                  projectOutput={projectOutput}
+                  onCopy={copyToClipboard}
+                />
+              )}
+              {activeTab === "questions" && (
+                <QuestionsTab
+                  projectOutput={projectOutput}
+                  onCopy={copyToClipboard}
+                />
+              )}
             </>
           )}
           {activeTab === "insights" && enableChatAndInsights && (
@@ -518,9 +630,9 @@ export default function AgileFactory() {
               isAddingNote={isAddingNote}
               onStartAddNote={() => setIsAddingNote(true)}
               onCancelAddNote={() => {
-                setIsAddingNote(false)
-                setNewNoteTitle("")
-                setNewNoteContent("")
+                setIsAddingNote(false);
+                setNewNoteTitle("");
+                setNewNoteContent("");
               }}
               newNoteTitle={newNoteTitle}
               setNewNoteTitle={setNewNoteTitle}
@@ -546,7 +658,10 @@ export default function AgileFactory() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <label htmlFor="chat-insights-toggle" className="text-sm font-medium cursor-pointer">
+              <label
+                htmlFor="chat-insights-toggle"
+                className="text-sm font-medium cursor-pointer"
+              >
                 Enable Chat & Insights
               </label>
               <Switch
@@ -596,7 +711,11 @@ export default function AgileFactory() {
                 <span className="text-2xl">{agentEmojis[activeAgent]}</span>
                 <h2 className="font-semibold">{activeAgent}</h2>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => setIsChatOpen(false)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsChatOpen(false)}
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -607,14 +726,21 @@ export default function AgileFactory() {
                 <div key={message.id} className="space-y-2">
                   <div
                     className={`rounded-lg p-3 ${
-                      message.isUser ? "bg-primary text-primary-foreground ml-8" : "bg-muted mr-8"
+                      message.isUser
+                        ? "bg-primary text-primary-foreground ml-8"
+                        : "bg-muted mr-8"
                     }`}
                   >
                     {!message.isUser && (
                       <div className="mb-1 flex items-center gap-2">
-                        <span className="text-xs font-semibold">{message.agent}</span>
+                        <span className="text-xs font-semibold">
+                          {message.agent}
+                        </span>
                         <span className="text-xs text-muted-foreground">
-                          {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          {message.timestamp.toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </span>
                       </div>
                     )}
@@ -631,7 +757,10 @@ export default function AgileFactory() {
                             <Select
                               value={saveInsightForm.type}
                               onValueChange={(value) =>
-                                setSaveInsightForm((prev) => ({ ...prev, type: value as InsightType }))
+                                setSaveInsightForm((prev) => ({
+                                  ...prev,
+                                  type: value as InsightType,
+                                }))
                               }
                             >
                               <SelectTrigger className="h-8 text-xs">
@@ -639,26 +768,43 @@ export default function AgileFactory() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="Summary">Summary</SelectItem>
-                                <SelectItem value="Epics & Stories">Epics & Stories</SelectItem>
-                                <SelectItem value="Risks & Assumptions">Risks & Assumptions</SelectItem>
-                                <SelectItem value="Open Questions">Open Questions</SelectItem>
+                                <SelectItem value="Epics & Stories">
+                                  Epics & Stories
+                                </SelectItem>
+                                <SelectItem value="Risks & Assumptions">
+                                  Risks & Assumptions
+                                </SelectItem>
+                                <SelectItem value="Open Questions">
+                                  Open Questions
+                                </SelectItem>
                                 <SelectItem value="Other">Other</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
 
                           <div className="space-y-2">
-                            <label className="text-xs font-medium">Label (optional)</label>
+                            <label className="text-xs font-medium">
+                              Label (optional)
+                            </label>
                             <Input
                               placeholder="e.g., Client-friendly version"
                               value={saveInsightForm.label}
-                              onChange={(e) => setSaveInsightForm((prev) => ({ ...prev, label: e.target.value }))}
+                              onChange={(e) =>
+                                setSaveInsightForm((prev) => ({
+                                  ...prev,
+                                  label: e.target.value,
+                                }))
+                              }
                               className="h-8 text-xs"
                             />
                           </div>
 
                           <div className="flex gap-2">
-                            <Button size="sm" onClick={() => saveToInsights(message)} className="h-7 text-xs">
+                            <Button
+                              size="sm"
+                              onClick={() => saveToInsights(message)}
+                              className="h-7 text-xs"
+                            >
                               Confirm
                             </Button>
                             <Button
@@ -699,7 +845,9 @@ export default function AgileFactory() {
                       variant="secondary"
                       className="flex items-center gap-1.5 bg-primary/10 text-primary pr-1 pl-2.5 py-1"
                     >
-                      <span className="text-xs max-w-[200px] truncate">{item.story.title}</span>
+                      <span className="text-xs max-w-[200px] truncate">
+                        {item.story.title}
+                      </span>
                       <button
                         onClick={() => removeFromContext(item.id)}
                         className="rounded-sm hover:bg-primary/20 p-0.5 transition-colors"
@@ -733,7 +881,10 @@ export default function AgileFactory() {
         <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Badge variant="secondary" className="bg-purple-500/10 text-purple-600">
+              <Badge
+                variant="secondary"
+                className="bg-purple-500/10 text-purple-600"
+              >
                 EPIC
               </Badge>
               {selectedEpic?.title}
@@ -748,12 +899,16 @@ export default function AgileFactory() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => copyToClipboard(selectedEpic?.title || "", "Epic Title")}
+                  onClick={() =>
+                    copyToClipboard(selectedEpic?.title || "", "Epic Title")
+                  }
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground">{selectedEpic?.title}</p>
+              <p className="text-sm text-muted-foreground">
+                {selectedEpic?.title}
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -762,22 +917,35 @@ export default function AgileFactory() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => copyToClipboard(selectedEpic?.description || "", "Epic Description")}
+                  onClick={() =>
+                    copyToClipboard(
+                      selectedEpic?.description || "",
+                      "Epic Description"
+                    )
+                  }
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground">{selectedEpic?.description}</p>
+              <p className="text-sm text-muted-foreground">
+                {selectedEpic?.description}
+              </p>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!selectedStory} onOpenChange={() => setSelectedStory(null)}>
+      <Dialog
+        open={!!selectedStory}
+        onOpenChange={() => setSelectedStory(null)}
+      >
         <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Badge variant="secondary" className="bg-blue-500/10 text-blue-600">
+              <Badge
+                variant="secondary"
+                className="bg-blue-500/10 text-blue-600"
+              >
                 STORY
               </Badge>
               {selectedStory?.title}
@@ -792,12 +960,16 @@ export default function AgileFactory() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => copyToClipboard(selectedStory?.title || "", "Story Title")}
+                  onClick={() =>
+                    copyToClipboard(selectedStory?.title || "", "Story Title")
+                  }
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-sm text-muted-foreground">{selectedStory?.title}</p>
+              <p className="text-sm text-muted-foreground">
+                {selectedStory?.title}
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -806,12 +978,19 @@ export default function AgileFactory() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => copyToClipboard(selectedStory?.description || "", "Story Description")}
+                  onClick={() =>
+                    copyToClipboard(
+                      selectedStory?.description || "",
+                      "Story Description"
+                    )
+                  }
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-sm italic text-muted-foreground">{selectedStory?.description}</p>
+              <p className="text-sm italic text-muted-foreground">
+                {selectedStory?.description}
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -820,14 +999,21 @@ export default function AgileFactory() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => copyToClipboard(`${selectedStory?.estimationHours || 0} hours`, "Estimation Hours")}
+                  onClick={() =>
+                    copyToClipboard(
+                      `${selectedStory?.estimationHours || 0} hours`,
+                      "Estimation Hours"
+                    )
+                  }
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">{selectedStory?.estimationHours || 0} hours</span>
+                <span className="text-sm text-muted-foreground">
+                  {selectedStory?.estimationHours || 0} hours
+                </span>
               </div>
             </div>
 
@@ -835,7 +1021,10 @@ export default function AgileFactory() {
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-semibold">
                   Acceptance Criteria
-                  <Badge variant="secondary" className="ml-2 bg-green-500/10 text-green-600">
+                  <Badge
+                    variant="secondary"
+                    className="ml-2 bg-green-500/10 text-green-600"
+                  >
                     AC: {selectedStory?.criteria.length || 0} items
                   </Badge>
                 </h4>
@@ -844,8 +1033,9 @@ export default function AgileFactory() {
                   size="sm"
                   onClick={() =>
                     copyToClipboard(
-                      selectedStory?.criteria.map((c) => `- ${c}`).join("\n") || "",
-                      "Acceptance Criteria",
+                      selectedStory?.criteria.map((c) => `- ${c}`).join("\n") ||
+                        "",
+                      "Acceptance Criteria"
                     )
                   }
                 >
@@ -864,19 +1054,29 @@ export default function AgileFactory() {
 
       <Toaster />
     </div>
-  )
+  );
 }
 
 // Summary Tab Component
-function SummaryTab({ projectOutput, onCopy }: { projectOutput: ProjectOutput; onCopy: (text: string, label: string) => void }) {
-  const summaryText = `${projectOutput.projectSummary.title}\n\n${projectOutput.projectSummary.description}`
+function SummaryTab({
+  projectOutput,
+  onCopy,
+}: {
+  projectOutput: ProjectOutput;
+  onCopy: (text: string, label: string) => void;
+}) {
+  const summaryText = `${projectOutput.projectSummary.title}\n\n${projectOutput.projectSummary.description}`;
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>{projectOutput.projectSummary.title}</CardTitle>
-          <Button variant="outline" size="sm" onClick={() => onCopy(summaryText, "Summary")}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onCopy(summaryText, "Summary")}
+          >
             <Copy className="mr-2 h-4 w-4" />
             Copy Summary
           </Button>
@@ -884,7 +1084,9 @@ function SummaryTab({ projectOutput, onCopy }: { projectOutput: ProjectOutput; o
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
-          <p className="leading-relaxed text-foreground">{projectOutput.projectSummary.description}</p>
+          <p className="leading-relaxed text-foreground">
+            {projectOutput.projectSummary.description}
+          </p>
         </div>
 
         <div>
@@ -897,31 +1099,46 @@ function SummaryTab({ projectOutput, onCopy }: { projectOutput: ProjectOutput; o
         </div>
 
         <div>
-          <h3 className="mb-3 font-semibold text-foreground">Project Overview</h3>
+          <h3 className="mb-3 font-semibold text-foreground">
+            Project Overview
+          </h3>
           <div className="flex flex-wrap gap-2">
             <Badge variant="secondary" className="gap-2 px-3 py-1">
               <span className="text-xs text-muted-foreground">Epics:</span>
-              <span className="text-xs font-medium">{projectOutput.epics.length}</span>
+              <span className="text-xs font-medium">
+                {projectOutput.epics.length}
+              </span>
             </Badge>
             <Badge variant="secondary" className="gap-2 px-3 py-1">
-              <span className="text-xs text-muted-foreground">Total Stories:</span>
+              <span className="text-xs text-muted-foreground">
+                Total Stories:
+              </span>
               <span className="text-xs font-medium">
-                {projectOutput.epics.reduce((acc, epic) => acc + epic.stories.length, 0)}
+                {projectOutput.epics.reduce(
+                  (acc, epic) => acc + epic.stories.length,
+                  0
+                )}
               </span>
             </Badge>
             <Badge variant="secondary" className="gap-2 px-3 py-1">
               <span className="text-xs text-muted-foreground">Risks:</span>
-              <span className="text-xs font-medium">{projectOutput.risks.length}</span>
+              <span className="text-xs font-medium">
+                {projectOutput.risks.length}
+              </span>
             </Badge>
             <Badge variant="secondary" className="gap-2 px-3 py-1">
-              <span className="text-xs text-muted-foreground">Assumptions:</span>
-              <span className="text-xs font-medium">{projectOutput.assumptions.length}</span>
+              <span className="text-xs text-muted-foreground">
+                Assumptions:
+              </span>
+              <span className="text-xs font-medium">
+                {projectOutput.assumptions.length}
+              </span>
             </Badge>
           </div>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 // Epics Tab Component
@@ -931,10 +1148,10 @@ function EpicsTab({
   onOpenStory,
   onAddToContext,
 }: {
-  projectOutput: ProjectOutput
-  onOpenEpic: (epic: Epic) => void
-  onOpenStory: (story: Story) => void
-  onAddToContext: (story: Story) => void
+  projectOutput: ProjectOutput;
+  onOpenEpic: (epic: Epic) => void;
+  onOpenStory: (story: Story) => void;
+  onAddToContext: (story: Story) => void;
 }) {
   // Convert project output epics to display format
   const epics: Epic[] = projectOutput.epics.map((epic) => ({
@@ -946,19 +1163,19 @@ function EpicsTab({
       criteria: story.acceptanceCriteria,
       estimationHours: 0, // Not in schema
     })),
-  }))
+  }));
 
-  const [collapsedEpics, setCollapsedEpics] = useState<Set<number>>(new Set())
+  const [collapsedEpics, setCollapsedEpics] = useState<Set<number>>(new Set());
 
   const toggleEpic = (index: number) => {
-    const newCollapsed = new Set(collapsedEpics)
+    const newCollapsed = new Set(collapsedEpics);
     if (newCollapsed.has(index)) {
-      newCollapsed.delete(index)
+      newCollapsed.delete(index);
     } else {
-      newCollapsed.add(index)
+      newCollapsed.add(index);
     }
-    setCollapsedEpics(newCollapsed)
-  }
+    setCollapsedEpics(newCollapsed);
+  };
 
   return (
     <div className="space-y-4">
@@ -966,7 +1183,10 @@ function EpicsTab({
         <Card key={index} className="bg-primary/5">
           <CardHeader>
             <div className="flex items-start justify-between gap-4">
-              <button onClick={() => toggleEpic(index)} className="flex flex-1 items-start gap-3 text-left">
+              <button
+                onClick={() => toggleEpic(index)}
+                className="flex flex-1 items-start gap-3 text-left"
+              >
                 {collapsedEpics.has(index) ? (
                   <ChevronRight className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
                 ) : (
@@ -974,21 +1194,29 @@ function EpicsTab({
                 )}
                 <div className="flex-1">
                   <div className="mb-2 flex items-center gap-2">
-                    <Badge variant="secondary" className="bg-purple-500/10 text-purple-600">
+                    <Badge
+                      variant="secondary"
+                      className="bg-purple-500/10 text-purple-600"
+                    >
                       EPIC
                     </Badge>
                     <CardTitle className="text-base">{epic.title}</CardTitle>
                   </div>
                   {collapsedEpics.has(index) ? (
                     <CardDescription className="text-sm">
-                      {epic.stories.length} {epic.stories.length === 1 ? "story" : "stories"}
+                      {epic.stories.length}{" "}
+                      {epic.stories.length === 1 ? "story" : "stories"}
                     </CardDescription>
                   ) : (
                     <CardDescription>{epic.description}</CardDescription>
                   )}
                 </div>
               </button>
-              <Button variant="ghost" size="sm" onClick={() => onOpenEpic(epic)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onOpenEpic(epic)}
+              >
                 View Details
               </Button>
             </div>
@@ -999,36 +1227,58 @@ function EpicsTab({
               <div className="grid gap-3 md:grid-cols-2">
                 {epic.stories.map((story, storyIndex) => (
                   <div key={storyIndex} className="relative group">
-                    <button
+                    <div
+                      role="button"
+                      tabIndex={0}
                       onClick={() => onOpenStory(story)}
-                      className="w-full rounded-lg border border-border bg-card p-4 text-left transition-colors hover:bg-accent"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onOpenStory(story);
+                        }
+                      }}
+                      className="w-full rounded-lg border border-border bg-card p-4 text-left transition-colors hover:bg-accent cursor-pointer"
                     >
                       <button
                         onClick={(e) => {
-                          e.stopPropagation()
-                          onAddToContext(story)
+                          e.stopPropagation();
+                          onAddToContext(story);
                         }}
                         className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity rounded-md p-1.5 hover:bg-primary/10"
                         title="Add to chat context"
+                        aria-label="Add to chat context"
                       >
                         <Plus className="h-4 w-4 text-primary" />
                       </button>
 
                       <div className="mb-2 flex items-center gap-2 flex-wrap">
-                        <Badge variant="secondary" className="bg-blue-500/10 text-blue-600">
+                        <Badge
+                          variant="secondary"
+                          className="bg-blue-500/10 text-blue-600"
+                        >
                           STORY
                         </Badge>
-                        <Badge variant="secondary" className="bg-green-500/10 text-green-600">
+                        <Badge
+                          variant="secondary"
+                          className="bg-green-500/10 text-green-600"
+                        >
                           AC: {story.criteria.length}
                         </Badge>
-                        <Badge variant="secondary" className="bg-orange-500/10 text-orange-600">
+                        <Badge
+                          variant="secondary"
+                          className="bg-orange-500/10 text-orange-600"
+                        >
                           <Clock className="mr-1 h-3 w-3" />
                           {story.estimationHours}h
                         </Badge>
                       </div>
-                      <h5 className="mb-1 font-medium text-foreground">{story.title}</h5>
-                      <p className="line-clamp-2 text-sm italic text-muted-foreground">{story.description}</p>
-                    </button>
+                      <h5 className="mb-1 font-medium text-foreground">
+                        {story.title}
+                      </h5>
+                      <p className="line-clamp-2 text-sm italic text-muted-foreground">
+                        {story.description}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1037,16 +1287,25 @@ function EpicsTab({
         </Card>
       ))}
     </div>
-  )
+  );
 }
 
 // Risks Tab Component
-function RisksTab({ projectOutput, onCopy }: { projectOutput: ProjectOutput; onCopy: (text: string, label: string) => void }) {
+function RisksTab({
+  projectOutput,
+  onCopy,
+}: {
+  projectOutput: ProjectOutput;
+  onCopy: (text: string, label: string) => void;
+}) {
   const risks = projectOutput.risks.map((risk) => ({
     title: risk.id,
     description: `${risk.description} Mitigation: ${risk.mitigation}`,
-    impact: risk.impact.charAt(0).toUpperCase() + risk.impact.slice(1) as "High" | "Medium" | "Low",
-  }))
+    impact: (risk.impact.charAt(0).toUpperCase() + risk.impact.slice(1)) as
+      | "High"
+      | "Medium"
+      | "Low",
+  }));
 
   return (
     <Card>
@@ -1060,7 +1319,12 @@ function RisksTab({ projectOutput, onCopy }: { projectOutput: ProjectOutput; onC
             variant="outline"
             size="sm"
             onClick={() =>
-              onCopy(risks.map((r) => `${r.title} (${r.impact}): ${r.description}`).join("\n\n"), "All Risks")
+              onCopy(
+                risks
+                  .map((r) => `${r.title} (${r.impact}): ${r.description}`)
+                  .join("\n\n"),
+                "All Risks"
+              )
             }
           >
             <Copy className="mr-2 h-4 w-4" />
@@ -1081,9 +1345,17 @@ function RisksTab({ projectOutput, onCopy }: { projectOutput: ProjectOutput; onC
             {risks.map((risk, index) => (
               <TableRow key={index}>
                 <TableCell className="font-medium">{risk.title}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{risk.description}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {risk.description}
+                </TableCell>
                 <TableCell>
-                  <Badge variant={risk.impact === "High" ? "destructive" : "secondary"}>{risk.impact}</Badge>
+                  <Badge
+                    variant={
+                      risk.impact === "High" ? "destructive" : "secondary"
+                    }
+                  >
+                    {risk.impact}
+                  </Badge>
                 </TableCell>
               </TableRow>
             ))}
@@ -1091,14 +1363,20 @@ function RisksTab({ projectOutput, onCopy }: { projectOutput: ProjectOutput; onC
         </Table>
       </CardContent>
     </Card>
-  )
+  );
 }
 
-function AssumptionsTab({ projectOutput, onCopy }: { projectOutput: ProjectOutput; onCopy: (text: string, label: string) => void }) {
+function AssumptionsTab({
+  projectOutput,
+  onCopy,
+}: {
+  projectOutput: ProjectOutput;
+  onCopy: (text: string, label: string) => void;
+}) {
   const assumptions = projectOutput.assumptions.map((assumption) => ({
     title: assumption.id,
     description: `${assumption.description} Reason: ${assumption.reason}`,
-  }))
+  }));
 
   return (
     <Card>
@@ -1112,7 +1390,12 @@ function AssumptionsTab({ projectOutput, onCopy }: { projectOutput: ProjectOutpu
             variant="outline"
             size="sm"
             onClick={() =>
-              onCopy(assumptions.map((a) => `${a.title}: ${a.description}`).join("\n\n"), "All Assumptions")
+              onCopy(
+                assumptions
+                  .map((a) => `${a.title}: ${a.description}`)
+                  .join("\n\n"),
+                "All Assumptions"
+              )
             }
           >
             <Copy className="mr-2 h-4 w-4" />
@@ -1131,32 +1414,42 @@ function AssumptionsTab({ projectOutput, onCopy }: { projectOutput: ProjectOutpu
           <TableBody>
             {assumptions.map((assumption, index) => (
               <TableRow key={index}>
-                <TableCell className="font-medium">{assumption.title}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{assumption.description}</TableCell>
+                <TableCell className="font-medium">
+                  {assumption.title}
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {assumption.description}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 // Questions Tab Component
-function QuestionsTab({ projectOutput, onCopy }: { projectOutput: ProjectOutput; onCopy: (text: string, label: string) => void }) {
+function QuestionsTab({
+  projectOutput,
+  onCopy,
+}: {
+  projectOutput: ProjectOutput;
+  onCopy: (text: string, label: string) => void;
+}) {
   // Flatten questions from all categories
   const questions = projectOutput.openQuestions.categories.flatMap((category) =>
     category.questions.map((q) => ({
       question: q.question,
       category: category.category,
     }))
-  )
+  );
 
   const categoryColors = {
     Client: "bg-blue-500/10 text-blue-600",
     Internal: "bg-green-500/10 text-green-600",
     Technical: "bg-purple-500/10 text-purple-600",
-  }
+  };
 
   return (
     <Card>
@@ -1169,13 +1462,21 @@ function QuestionsTab({ projectOutput, onCopy }: { projectOutput: ProjectOutput;
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onCopy(questions.map((q, i) => `${i + 1}. ${q.question}`).join("\n"), "All Questions")}
+            onClick={() =>
+              onCopy(
+                questions.map((q, i) => `${i + 1}. ${q.question}`).join("\n"),
+                "All Questions"
+              )
+            }
           >
             <Copy className="mr-2 h-4 w-4" />
             Copy All Questions
           </Button>
         </div>
-        <CardDescription>Questions that need to be answered before or during the discovery phase</CardDescription>
+        <CardDescription>
+          Questions that need to be answered before or during the discovery
+          phase
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
@@ -1192,7 +1493,14 @@ function QuestionsTab({ projectOutput, onCopy }: { projectOutput: ProjectOutput;
                 <TableCell className="font-medium">{index + 1}</TableCell>
                 <TableCell className="text-sm">{item.question}</TableCell>
                 <TableCell>
-                  <Badge variant="secondary" className={categoryColors[item.category as keyof typeof categoryColors]}>
+                  <Badge
+                    variant="secondary"
+                    className={
+                      categoryColors[
+                        item.category as keyof typeof categoryColors
+                      ]
+                    }
+                  >
                     {item.category}
                   </Badge>
                 </TableCell>
@@ -1202,7 +1510,7 @@ function QuestionsTab({ projectOutput, onCopy }: { projectOutput: ProjectOutput;
         </Table>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function InsightsTab({
@@ -1220,19 +1528,19 @@ function InsightsTab({
   setNewNoteContent,
   onAddNote,
 }: {
-  insights: Insight[]
-  freeformNotes: FreeformNote[]
-  expandedInsights: Set<string>
-  onToggleExpand: (id: string) => void
-  onCopy: (text: string, label: string) => void
-  isAddingNote: boolean
-  onStartAddNote: () => void
-  onCancelAddNote: () => void
-  newNoteTitle: string
-  setNewNoteTitle: (title: string) => void
-  newNoteContent: string
-  setNewNoteContent: (content: string) => void
-  onAddNote: () => void
+  insights: Insight[];
+  freeformNotes: FreeformNote[];
+  expandedInsights: Set<string>;
+  onToggleExpand: (id: string) => void;
+  onCopy: (text: string, label: string) => void;
+  isAddingNote: boolean;
+  onStartAddNote: () => void;
+  onCancelAddNote: () => void;
+  newNoteTitle: string;
+  setNewNoteTitle: (title: string) => void;
+  newNoteContent: string;
+  setNewNoteContent: (content: string) => void;
+  onAddNote: () => void;
 }) {
   const typeColors = {
     Summary: "bg-blue-500/10 text-blue-600",
@@ -1240,7 +1548,7 @@ function InsightsTab({
     "Risks & Assumptions": "bg-red-500/10 text-red-600",
     "Open Questions": "bg-yellow-500/10 text-yellow-600",
     Other: "bg-gray-500/10 text-gray-600",
-  }
+  };
 
   const agentColors = {
     "General Orchestrator": "bg-slate-500/10 text-slate-600",
@@ -1254,7 +1562,7 @@ function InsightsTab({
     "QA Lead": "bg-lime-500/10 text-lime-600",
     "Account Lead": "bg-amber-500/10 text-amber-600",
     "Client Owner": "bg-indigo-500/10 text-indigo-600",
-  }
+  };
 
   return (
     <div className="space-y-8">
@@ -1262,7 +1570,10 @@ function InsightsTab({
       <Card>
         <CardHeader>
           <CardTitle>Saved Alternatives</CardTitle>
-          <CardDescription>Alternative versions and refined outputs saved from agent conversations</CardDescription>
+          <CardDescription>
+            Alternative versions and refined outputs saved from agent
+            conversations
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {insights.length === 0 ? (
@@ -1279,10 +1590,20 @@ function InsightsTab({
                       <div>
                         <h4 className="mb-2 font-medium">{insight.label}</h4>
                         <div className="flex flex-wrap gap-2">
-                          <Badge variant="secondary" className={typeColors[insight.type]}>
+                          <Badge
+                            variant="secondary"
+                            className={typeColors[insight.type]}
+                          >
                             {insight.type}
                           </Badge>
-                          <Badge variant="secondary" className={agentColors[insight.agent as keyof typeof agentColors]}>
+                          <Badge
+                            variant="secondary"
+                            className={
+                              agentColors[
+                                insight.agent as keyof typeof agentColors
+                              ]
+                            }
+                          >
                             {insight.agent}
                           </Badge>
                         </div>
@@ -1293,7 +1614,8 @@ function InsightsTab({
                         <p className="text-sm text-muted-foreground">
                           {expandedInsights.has(insight.id)
                             ? insight.content
-                            : insight.content.slice(0, 120) + (insight.content.length > 120 ? "..." : "")}
+                            : insight.content.slice(0, 120) +
+                              (insight.content.length > 120 ? "..." : "")}
                         </p>
                       </div>
 
@@ -1306,7 +1628,9 @@ function InsightsTab({
                             onClick={() => onToggleExpand(insight.id)}
                             className="h-7 text-xs"
                           >
-                            {expandedInsights.has(insight.id) ? "Show less" : "View full"}
+                            {expandedInsights.has(insight.id)
+                              ? "Show less"
+                              : "View full"}
                           </Button>
                         )}
                         <Button
@@ -1334,7 +1658,9 @@ function InsightsTab({
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Freeform Notes</CardTitle>
-              <CardDescription>Personal notes and ideas from your discovery process</CardDescription>
+              <CardDescription>
+                Personal notes and ideas from your discovery process
+              </CardDescription>
             </div>
             {!isAddingNote && (
               <Button size="sm" onClick={onStartAddNote}>
@@ -1379,7 +1705,9 @@ function InsightsTab({
           )}
 
           {freeformNotes.length === 0 ? (
-            <p className="text-center text-sm text-muted-foreground">No notes yet. Click "Add Note" to create one.</p>
+            <p className="text-center text-sm text-muted-foreground">
+              No notes yet. Click "Add Note" to create one.
+            </p>
           ) : (
             <div className="space-y-3">
               {freeformNotes.map((note) => (
@@ -1387,18 +1715,26 @@ function InsightsTab({
                   <CardContent className="p-4">
                     <div className="space-y-2">
                       <h4 className="font-medium">{note.title}</h4>
-                      {note.content && <p className="text-sm text-muted-foreground">{note.content}</p>}
+                      {note.content && (
+                        <p className="text-sm text-muted-foreground">
+                          {note.content}
+                        </p>
+                      )}
                       <div className="flex items-center gap-2">
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => onCopy(`${note.title}\n\n${note.content}`, "Note")}
+                          onClick={() =>
+                            onCopy(`${note.title}\n\n${note.content}`, "Note")
+                          }
                           className="h-7 text-xs"
                         >
                           <Copy className="mr-1 h-3 w-3" />
                           Copy
                         </Button>
-                        <span className="text-xs text-muted-foreground">{note.timestamp.toLocaleDateString()}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {note.timestamp.toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
                   </CardContent>
@@ -1409,5 +1745,5 @@ function InsightsTab({
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
